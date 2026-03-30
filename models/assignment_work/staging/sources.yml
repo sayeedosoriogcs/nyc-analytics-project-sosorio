@@ -141,7 +141,7 @@ sources:
           - name: bin
             description: Building Identification Number
           - name: bulding_number
-            description: Building number (note: field name contains typo in source data)
+            description: Building number
           - name: census_tract
             description: Census tract of the location
           - name: community_board
