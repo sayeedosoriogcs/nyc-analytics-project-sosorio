@@ -1,4 +1,3 @@
-
  -- Quick test to verify source connection works
  SELECT
      unique_key,
@@ -7,4 +6,3 @@
      borough
  FROM {{ source('raw', 'source_dot_service_requests_history') }}
  LIMIT 10
-
