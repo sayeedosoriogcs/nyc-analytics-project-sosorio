@@ -90,7 +90,7 @@ sources:
           - name: landmark
             description: Nearby landmark or point of interest
 
-      - name: source_dot_service_requests_history
+      - name: source_nyc_open_restaurant_apps
         description: RAW data fro NYC Open Restaurant applications (historic).
         columns:
           - name: objectid
