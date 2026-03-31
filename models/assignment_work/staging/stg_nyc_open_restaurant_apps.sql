@@ -1,4 +1,4 @@
--- Clean and standardize Open Restaurant Applications data
+-- Clean and lightly standardize Open Restaurant Applications data
 -- One row per application (objectid)
 
 WITH source AS (
@@ -8,92 +8,42 @@ WITH source AS (
 
 cleaned AS (
     SELECT
-        -- Keep all columns except ones we are transforming
+        -- Keep most columns, only transform key ones
         * EXCEPT (
             objectid,
-            restaurant_name,
-            legal_business_name,
-            business_address,
-            borough,
-            city,
-            state,
             zip_code,
             zip,
-            seating_interest_sidewalk,
-            seating_interest_roadway,
-            sla_serial_number,
-            sla_license_type,
-            latitude,
-            longitude,
+            borough,
             submission_timestamp,
-            approved_for_sidewalk_seating,
-            approved_for_roadway_seating
+            latitude,
+            longitude
         ),
 
-        -- Identifiers
+        -- Identifier
         CAST(objectid AS STRING) AS application_id,
 
-        -- Business info
-        TRIM(CAST(restaurant_name AS STRING)) AS restaurant_name,
-        TRIM(CAST(legal_business_name AS STRING)) AS legal_business_name,
+        -- Clean ZIP (minimal logic)
+        CAST(COALESCE(zip_code, zip) AS STRING) AS zip_code,
 
-        -- Address
-        TRIM(CAST(business_address AS STRING)) AS business_address,
-        TRIM(CAST(city AS STRING)) AS city,
-        TRIM(CAST(state AS STRING)) AS state,
+        -- Standardize borough (light touch)
+        INITCAP(TRIM(borough)) AS borough,
 
-        -- Clean ZIP (handle duplicates + bad values)
-        CASE
-            WHEN UPPER(TRIM(COALESCE(zip_code, zip))) IN ('N/A', 'NA', '') THEN NULL
-            WHEN LENGTH(COALESCE(zip_code, zip)) = 5 THEN CAST(COALESCE(zip_code, zip) AS STRING)
-            WHEN LENGTH(COALESCE(zip_code, zip)) = 10
-                 AND REGEXP_CONTAINS(COALESCE(zip_code, zip), r'^\d{5}-\d{4}')
-            THEN CAST(COALESCE(zip_code, zip) AS STRING)
-            ELSE NULL
-        END AS zip_code,
-
-        -- Standardize borough
-        CASE
-            WHEN UPPER(TRIM(borough)) IN ('MANHATTAN', 'NEW YORK') THEN 'Manhattan'
-            WHEN UPPER(TRIM(borough)) IN ('BRONX', 'THE BRONX') THEN 'Bronx'
-            WHEN UPPER(TRIM(borough)) IN ('BROOKLYN') THEN 'Brooklyn'
-            WHEN UPPER(TRIM(borough)) IN ('QUEENS') THEN 'Queens'
-            WHEN UPPER(TRIM(borough)) IN ('STATEN ISLAND') THEN 'Staten Island'
-            ELSE 'UNKNOWN'
-        END AS borough,
-
-        -- Seating interest
-        UPPER(TRIM(CAST(seating_interest_sidewalk AS STRING))) AS seating_interest_sidewalk,
-        UPPER(TRIM(CAST(seating_interest_roadway AS STRING))) AS seating_interest_roadway,
-
-        -- Approvals
-        UPPER(TRIM(CAST(approved_for_sidewalk_seating AS STRING))) AS approved_for_sidewalk_seating,
-        UPPER(TRIM(CAST(approved_for_roadway_seating AS STRING))) AS approved_for_roadway_seating,
-
-        -- Licensing
-        CAST(sla_serial_number AS STRING) AS sla_serial_number,
-        CAST(sla_license_type AS STRING) AS sla_license_type,
-
-        -- Location
-        CAST(latitude AS DECIMAL) AS latitude,
-        CAST(longitude AS DECIMAL) AS longitude,
-
-        -- Timestamp
+        -- Ensure proper types
         CAST(submission_timestamp AS TIMESTAMP) AS submission_timestamp,
+        CAST(latitude AS FLOAT64) AS latitude,
+        CAST(longitude AS FLOAT64) AS longitude,
 
         -- Metadata
         CURRENT_TIMESTAMP() AS _stg_loaded_at
 
     FROM source
 
-    -- Filters (similar philosophy as 311)
+    -- Light filtering only (don’t overdo it)
     WHERE objectid IS NOT NULL
-      AND submission_timestamp IS NOT NULL
-      AND borough IS NOT NULL
 
-    -- Deduplicate: one row per application
+    -- Deduplicate (still important)
     QUALIFY ROW_NUMBER() OVER (
-        PARTITION BY objectid 
+        PARTITION BY objectid
         ORDER BY submission_timestamp DESC
     ) = 1
 )
