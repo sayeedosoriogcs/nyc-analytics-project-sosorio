@@ -3,7 +3,7 @@
 
 WITH source AS (
     SELECT * 
-    FROM {{ source('raw', 'open_restaurant_applications_raw') }}
+    FROM {{ source('raw', 'source_nyc_open_restaurant_apps') }}
 ),
 
 cleaned AS (
