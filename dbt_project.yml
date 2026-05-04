@@ -24,18 +24,17 @@ models:
    assignment_work:
      staging:
        +materialized: table
-       +schema: nyc_transit_restaurants_staging
+       +schema: motorvehicle_collisions_crashes_staging
 
      marts:
        +materialized: table
-       +schema: nyc_transit_restaurants_marts
+       +schema: motorvehicle_collisions_crashes_marts
       
        shared:
          +materialized: table
 
-       open_restaurant_apps:
+       open_vehicle_apps:
          +materialized: table
 
-       dot_311:
+       nyc_311:
          +materialized: table
-
