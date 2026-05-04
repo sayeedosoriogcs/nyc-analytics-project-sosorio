@@ -4,5 +4,5 @@
      created_date,
      complaint_type,
      borough
- FROM {{ source('raw', 'source_dot_service_requests_history') }}
+ FROM {{ source('raw', 'nyc_311_service_requests') }}
  LIMIT 10
