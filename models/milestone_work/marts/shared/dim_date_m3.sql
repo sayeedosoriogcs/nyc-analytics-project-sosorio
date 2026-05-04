@@ -1,42 +1,45 @@
-WITH all_dates AS (
+-- models/milestone_work/marts/shared/dim_date_m3.sql
 
-    SELECT DISTINCT CAST(created_date AS DATE) AS full_date
-    FROM {{ ref('stg_nyc_311_sr') }}
-    WHERE created_date IS NOT NULL
+with date_spine as (
 
-    UNION DISTINCT
-
-    SELECT DISTINCT CAST(crash_time AS DATE) AS full_date
-    FROM {{ ref('stg_motorvehicle_collisions_crashes') }}
-    WHERE crash_time IS NOT NULL
+    {{
+        dbt_utils.date_spine(
+            datepart="day",
+            start_date="cast('2022-01-01' as date)",
+            end_date="cast('2026-12-31' as date)"
+        )
+    }}
 
 ),
 
-date_dimension AS (
+final as (
 
-    SELECT
-        {{ dbt_utils.generate_surrogate_key(['CAST(full_date AS STRING)']) }} AS date_key,
+    select
+        -- Surrogate key
+        cast(to_char(date_day, 'YYYYMMDD') as integer)  as date_key,
 
-        full_date,
-        EXTRACT(YEAR FROM full_date) AS year,
-        EXTRACT(QUARTER FROM full_date) AS quarter,
-        EXTRACT(MONTH FROM full_date) AS month,
-        FORMAT_DATE('%B', full_date) AS month_name,
-        EXTRACT(DAY FROM full_date) AS day_of_month,
-        EXTRACT(DAYOFWEEK FROM full_date) AS day_of_week,
-        FORMAT_DATE('%A', full_date) AS day_name,
+        -- Date
+        date_day                                         as full_date,
 
-        CASE 
-            WHEN EXTRACT(DAYOFWEEK FROM full_date) IN (1, 7) THEN TRUE 
-            ELSE FALSE 
-        END AS is_weekend,
+        -- Day-level
+        extract(day   from date_day)::int                as day,
+        extract(month from date_day)::int                as month,
+        to_char(date_day, 'Month')                       as month_name,
+        extract(quarter from date_day)::int              as quarter,
+        extract(year  from date_day)::int                as year,
 
-        CASE
-            WHEN EXTRACT(MONTH FROM full_date) >= 7 THEN EXTRACT(YEAR FROM full_date) + 1
-            ELSE EXTRACT(YEAR FROM full_date)
-        END AS fiscal_year
+        -- Week
+        to_char(date_day, 'Day')                         as day_of_week,
+        extract(dow from date_day)::int                  as day_of_week_num,  -- 0=Sun, 6=Sat
 
-    FROM all_dates
+        -- Flags
+        case
+            when extract(dow from date_day) in (0, 6) then true
+            else false
+        end                                              as is_weekend
+
+    from date_spine
+
 )
 
-SELECT * FROM date_dimension
+select * from final
