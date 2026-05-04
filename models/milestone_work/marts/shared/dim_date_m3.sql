@@ -1,37 +1,42 @@
 WITH all_dates AS (
-   -- Get dates (dates, no time included) from 311 requests
-   SELECT DISTINCT CAST(created_date AS DATE) AS full_date
-   FROM {{ ref('stg_nyc_311_sr') }}
-   WHERE created_date IS NOT NULL
 
-   UNION DISTINCT
+    SELECT DISTINCT CAST(created_date AS DATE) AS full_date
+    FROM {{ ref('stg_nyc_311_sr') }}
+    WHERE created_date IS NOT NULL
 
-   -- Get dates from restaurant applications
-   SELECT DISTINCT CAST(crash_time AS DATE) AS full_date
-   FROM {{ ref('stg_motorvehicle_collisions_crashes') }}
-   WHERE crash_time IS NOT NULL
+    UNION DISTINCT
+
+    SELECT DISTINCT CAST(crash_time AS DATE) AS full_date
+    FROM {{ ref('stg_motorvehicle_collisions_crashes') }}
+    WHERE crash_time IS NOT NULL
+
 ),
 
 date_dimension AS (
-   SELECT
-       {{ dbt_utils.generate_surrogate_key(['full_date']) }} AS date_key,
 
-       full_date,
-       EXTRACT(YEAR FROM full_date) AS year,
-       EXTRACT(QUARTER FROM full_date) AS quarter,
-       EXTRACT(MONTH FROM full_date) AS month,
-       FORMAT_DATE('%B', full_date) AS month_name,
-       EXTRACT(DAY FROM full_date) AS day_of_month,
-       EXTRACT(DAYOFWEEK FROM full_date) AS day_of_week,
-       FORMAT_DATE('%A', full_date) AS day_name,
-       EXTRACT(DAYOFWEEK FROM full_date) IN (1, 7) AS is_weekend,
+    SELECT
+        {{ dbt_utils.generate_surrogate_key(['CAST(full_date AS STRING)']) }} AS date_key,
 
-       CASE
-           WHEN EXTRACT(MONTH FROM full_date) >= 7 THEN EXTRACT(YEAR FROM full_date) + 1
-           ELSE EXTRACT(YEAR FROM full_date)
-       END AS fiscal_year
+        full_date,
+        EXTRACT(YEAR FROM full_date) AS year,
+        EXTRACT(QUARTER FROM full_date) AS quarter,
+        EXTRACT(MONTH FROM full_date) AS month,
+        FORMAT_DATE('%B', full_date) AS month_name,
+        EXTRACT(DAY FROM full_date) AS day_of_month,
+        EXTRACT(DAYOFWEEK FROM full_date) AS day_of_week,
+        FORMAT_DATE('%A', full_date) AS day_name,
 
-   FROM all_dates
+        CASE 
+            WHEN EXTRACT(DAYOFWEEK FROM full_date) IN (1, 7) THEN TRUE 
+            ELSE FALSE 
+        END AS is_weekend,
+
+        CASE
+            WHEN EXTRACT(MONTH FROM full_date) >= 7 THEN EXTRACT(YEAR FROM full_date) + 1
+            ELSE EXTRACT(YEAR FROM full_date)
+        END AS fiscal_year
+
+    FROM all_dates
 )
 
 SELECT * FROM date_dimension
