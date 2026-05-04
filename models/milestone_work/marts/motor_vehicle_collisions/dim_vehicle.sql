@@ -1,45 +1,66 @@
-WITH source AS (
-    SELECT *
-    FROM {{ ref('stg_motorvehicle_collisions_crashes') }}
+-- models/milestone_work/marts/motor_vehicle_collisions/dim_vehicle.sql
+
+with source as (
+
+    select *
+    from {{ ref('stg_motorvehicle_collisions_crashes') }}
+
 ),
 
-vehicle_unpivot AS (
-    -- Bring all vehicle columns into one column
-    SELECT TRIM(vehicle_type_code1) AS vehicle_type FROM source
-    UNION ALL
-    SELECT TRIM(vehicle_type_code2) FROM source
-    UNION ALL
-    SELECT TRIM(vehicle_type_code_3) FROM source
-    UNION ALL
-    SELECT TRIM(vehicle_type_code_4) FROM source
-    UNION ALL
-    SELECT TRIM(vehicle_type_code_5) FROM source
+vehicle_unpivot as (
+
+    select trim(vehicle_type_code1)   as vehicle_type from source
+    union all
+    select trim(vehicle_type_code2)   from source
+    union all
+    select trim(vehicle_type_code_3)  from source
+    union all
+    select trim(vehicle_type_code_4)  from source
+    union all
+    select trim(vehicle_type_code_5)  from source
+
 ),
 
-cleaned AS (
-    SELECT DISTINCT
+cleaned as (
+
+    select distinct
         vehicle_type
-    FROM vehicle_unpivot
-    WHERE vehicle_type IS NOT NULL
-      AND vehicle_type != ''
+    from vehicle_unpivot
+    where vehicle_type is not null
+      and vehicle_type != ''
+
 ),
 
-final AS (
-    SELECT
-        ROW_NUMBER() OVER (ORDER BY vehicle_type) AS vehicle_key,
+final as (
+
+    select
+        {{ dbt_utils.generate_surrogate_key(['vehicle_type']) }} as vehicle_key,
         vehicle_type,
 
-        -- Optional: basic categorization (can improve later)
-        CASE
-            WHEN LOWER(vehicle_type) LIKE '%taxi%' THEN 'Taxi'
-            WHEN LOWER(vehicle_type) LIKE '%bus%' THEN 'Bus'
-            WHEN LOWER(vehicle_type) LIKE '%truck%' THEN 'Truck'
-            WHEN LOWER(vehicle_type) LIKE '%bike%' THEN 'Bicycle'
-            WHEN LOWER(vehicle_type) LIKE '%motorcycle%' THEN 'Motorcycle'
-            ELSE 'Other'
-        END AS vehicle_body_type
+        case
+            when lower(vehicle_type) like '%taxi%'          then 'Taxi'
+            when lower(vehicle_type) like '%bus%'           then 'Bus'
+            when lower(vehicle_type) like '%truck%'         then 'Truck'
+            when lower(vehicle_type) like '%tractor%'       then 'Truck'
+            when lower(vehicle_type) like '%trailer%'       then 'Truck'
+            when lower(vehicle_type) like '%bike%'          then 'Bicycle'
+            when lower(vehicle_type) like '%bicycle%'       then 'Bicycle'
+            when lower(vehicle_type) like '%e-bik%'         then 'Bicycle'
+            when lower(vehicle_type) like '%motorcycle%'    then 'Motorcycle'
+            when lower(vehicle_type) like '%motorbike%'     then 'Motorcycle'
+            when lower(vehicle_type) like '%scooter%'       then 'Motorcycle'
+            when lower(vehicle_type) like '%sedan%'         then 'Passenger Vehicle'
+            when lower(vehicle_type) like '%station wagon%' then 'Passenger Vehicle'
+            when lower(vehicle_type) like '%suv%'           then 'Passenger Vehicle'
+            when lower(vehicle_type) like '%van%'           then 'Van'
+            when lower(vehicle_type) like '%ambulance%'     then 'Emergency'
+            when lower(vehicle_type) like '%fire%'          then 'Emergency'
+            when lower(vehicle_type) like '%police%'        then 'Emergency'
+            else 'Other'
+        end as vehicle_body_type
 
-    FROM cleaned
+    from cleaned
+
 )
 
-SELECT * FROM final;
+select * from final
