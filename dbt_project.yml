@@ -18,23 +18,22 @@ clean-targets:
 
 # Set up models, which are basically SQL files, to create tables
 models:
- nyc_analytics:
-   +materialized: table
+  nyc_analytics:
+    assignment_work:
 
-   assignment_work:
-     staging:
-       +materialized: table
-       +schema: motorvehicle_collisions_crashes_staging
+      staging:
+        +materialized: table
+        +schema: motorvehicle_collisions_crashes_staging
 
-     marts:
-       +materialized: table
-       +schema: motorvehicle_collisions_crashes_marts
-      
-       shared:
-         +materialized: table
+      marts:
+        +materialized: table
+        +schema: motorvehicle_collisions_crashes_marts
 
-       open_vehicle_apps:
-         +materialized: table
+        shared:
+          +materialized: table
 
-       nyc_311:
-         +materialized: table
+        nyc_311:
+          +materialized: table
+
+        motor_vehicle_collisions:
+          +materialized: table
