@@ -7,7 +7,7 @@ WITH all_dates AS (
    UNION DISTINCT
 
    -- Get dates from restaurant applications
-   SELECT DISTINCT CAST(time_of_submission AS DATE) AS full_date
+   SELECT DISTINCT CAST(crash_time AS DATE) AS full_date
    FROM {{ ref('stg_motorvehicle_collisions_crashes') }}
    WHERE crash_time IS NOT NULL
 ),
