@@ -1,6 +1,6 @@
 WITH source AS (
     SELECT * 
-    FROM {{ source('raw', 'stg_nyc_311_sr') }}
+    FROM {{ ref('stg_nyc_311_sr') }}
 ),
 
 filtered AS (
