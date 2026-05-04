@@ -19,7 +19,7 @@ clean-targets:
 # Set up models, which are basically SQL files, to create tables
 models:
   nyc_analytics:
-    assignment_work:
+    milestone_work:
 
       staging:
         +materialized: table
