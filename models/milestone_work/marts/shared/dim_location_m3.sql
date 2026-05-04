@@ -1,29 +1,33 @@
--- Location dimension shared by both restaurant applications and 311 service reqs
+-- Location dimension shared by both 311 complaints and motor vehicle collisions
 
-WITH all_locations AS (
-   -- Get locations from 311 requests
-   SELECT DISTINCT
-      borough,
-       incident_zip AS zip_code --TODO replace (HINT: look @ dimensional model & staging data!)
-   FROM {{ ref('stg_nyc_311_sr') }}
-   WHERE borough IS NOT NULL
+with all_locations as (
 
-   UNION DISTINCT
+    -- Get locations from 311 illegal parking complaints
+    select distinct
+        borough,
+        incident_zip as zip_code
+    from {{ ref('stg_nyc_311_sr') }}
+    where borough is not null
 
-   -- Get locations from restaurant applications
-   SELECT DISTINCT
-       borough,
-       zip_code -- TODO replace (HINT: look @ dimensional model & staging data!)
-   FROM {{ ref('stg_motorvehicle_collisions_crashes') }}
-   WHERE borough IS NOT NULL
+    union distinct
+
+    -- Get locations from motor vehicle collisions
+    select distinct
+        borough,
+        zip_code
+    from {{ ref('stg_motorvehicle_collisions_crashes') }}
+    where borough is not null
+
 ),
 
-location_dimension AS (
-   SELECT
-       {{ dbt_utils.generate_surrogate_key(['borough', 'zip_code']) }} AS location_key,
-       borough,
-       zip_code
-   FROM all_locations
+location_dimension as (
+
+    select
+        {{ dbt_utils.generate_surrogate_key(['borough', 'zip_code']) }} as location_key,
+        borough,
+        zip_code
+    from all_locations
+
 )
 
-SELECT * FROM location_dimension --TODO replace ??s with what to select. HINT: May be quite simple!
+select * from location_dimension
