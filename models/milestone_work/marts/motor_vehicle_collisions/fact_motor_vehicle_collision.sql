@@ -1,47 +1,48 @@
+-- models/milestone_work/marts/motor_vehicle_collisions/fact_motor_vehicle_collision.sql
+-- Grain: one row per collision
 
 WITH collisions AS (
     SELECT * FROM {{ ref('stg_motorvehicle_collisions_crashes') }}
 ),
 
 dim_date AS (
-    SELECT date_key, full_date FROM {{ ref('dim_date_m3') }}
+    SELECT * FROM {{ ref('dim_date_m3') }}
 ),
 
 dim_location AS (
-    SELECT location_key, borough, zip_code FROM {{ ref('dim_location_m3') }}
+    SELECT * FROM {{ ref('dim_location_m3') }}
 ),
 
 dim_contributing_factor AS (
-    SELECT contributing_factor_key, contributing_factor_description
-    FROM {{ ref('dim_contributing_factor') }}
+    SELECT * FROM {{ ref('dim_contributing_factor') }}
 ),
 
 dim_vehicle AS (
-    SELECT vehicle_key, vehicle_type FROM {{ ref('dim_vehicle') }}
+    SELECT * FROM {{ ref('dim_vehicle') }}
 ),
 
-final AS (
+fact_motor_vehicle_collision AS (
     SELECT
         -- Surrogate key
         {{ dbt_utils.generate_surrogate_key(['c.collision_id']) }} AS collision_fact_key,
 
-        -- Degenerate dimension
+        -- Natural key
         c.collision_id,
 
-        -- Foreign keys
-        d.date_key AS date_key,
-        l.location_key,
-        cf.contributing_factor_key,
-        v.vehicle_key,
+        -- Dimension keys
+        d.date_key          AS date_key,
+        l.location_key      AS location_key,
+        cf.contributing_factor_key AS contributing_factor_key,
+        v.vehicle_key       AS vehicle_key,
 
         -- Measures
-        1 AS collision_count,
-        COALESCE(c.number_of_persons_injured, 0)  AS number_of_injuries,
-        COALESCE(c.number_of_persons_killed, 0)   AS number_of_fatalities,
+        1                                                       AS collision_count,
+        COALESCE(c.number_of_persons_injured, 0)                AS number_of_injuries,
+        COALESCE(c.number_of_persons_killed, 0)                 AS number_of_fatalities,
 
-        -- Rounded geo
-        ROUND(c.latitude, 3)  AS latitude_rounded,
-        ROUND(c.longitude, 3) AS longitude_rounded
+        -- Geo
+        ROUND(c.latitude, 3)   AS latitude_rounded,
+        ROUND(c.longitude, 3)  AS longitude_rounded
 
     FROM collisions c
 
@@ -49,7 +50,7 @@ final AS (
         ON c.crash_date = d.full_date
 
     LEFT JOIN dim_location l
-        ON c.borough = l.borough
+        ON c.borough   = l.borough
         AND c.zip_code = l.zip_code
 
     LEFT JOIN dim_contributing_factor cf
