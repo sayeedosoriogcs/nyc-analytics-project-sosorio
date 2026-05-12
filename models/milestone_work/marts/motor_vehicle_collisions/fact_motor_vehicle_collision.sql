@@ -1,5 +1,4 @@
--- models/milestone_work/marts/motor_vehicle_collisions/fact_motor_vehicle_collision.sql
--- Grain: one row per collision
+
 
 WITH collisions AS (
     SELECT * FROM {{ ref('stg_motorvehicle_collisions_crashes') }}
@@ -21,7 +20,7 @@ dim_vehicle AS (
     SELECT * FROM {{ ref('dim_vehicle') }}
 ),
 
-fact_motor_vehicle_collision AS (
+final AS (
     SELECT
         -- Surrogate key
         {{ dbt_utils.generate_surrogate_key(['c.collision_id']) }} AS collision_fact_key,
