@@ -1,3 +1,5 @@
+
+
 WITH requests AS (
     SELECT * FROM {{ ref('stg_nyc_311_sr') }}
 ),
@@ -22,14 +24,14 @@ dim_agency AS (
 final AS (
     SELECT
         -- Surrogate key
-        {{ dbt_utils.generate_surrogate_key(['r.unique_key']) }} AS complaint_fact_key,
+        {{ dbt_utils.generate_surrogate_key(['r.request_id']) }} AS complaint_fact_key,
 
         -- Degenerate dimension
-        r.unique_key AS complaint_number,
+        r.request_id AS complaint_number,
 
         -- Foreign keys
-        d_created.date_key  AS date_created_key,
-        d_closed.date_key   AS date_closed_key,
+        d_created.date_key AS date_created_key,
+        d_closed.date_key  AS date_closed_key,
         l.location_key,
         c.complaint_type_key,
         a.agency_key,
@@ -38,8 +40,8 @@ final AS (
         1 AS complaint_count,
 
         TIMESTAMP_DIFF(
-            CAST(r.closed_date AS TIMESTAMP),
-            CAST(r.created_date AS TIMESTAMP),
+            r.closed_date,
+            r.created_date,
             MINUTE
         ) AS resolution_time_minutes,
 
