@@ -1,24 +1,22 @@
-WITH collisions AS (
-    SELECT * FROM {{ ref('stg_motorvehicle_collisions_crashes') }}
-),
+-- WITH collisions AS (
+--     SELECT * FROM {{ ref('stg_motorvehicle_collisions_crashes') }}
+-- ),
 
-dim_date AS (
-    SELECT * FROM {{ ref('dim_date_m3') }}
-),
+-- dim_date AS (
+--     SELECT * FROM {{ ref('dim_date_m3') }}
+-- ),
 
-dim_location AS (
-    SELECT * FROM {{ ref('dim_location_m3') }}
-),
+-- dim_location AS (
+--     SELECT * FROM {{ ref('dim_location_m3') }}
+-- ),
 
-dim_contributing_factor AS (
-    SELECT * FROM {{ ref('dim_contributing_factor') }}
-),
+-- dim_contributing_factor AS (
+--     SELECT * FROM {{ ref('dim_contributing_factor') }}
+-- ),
 
-dim_vehicle AS (
-    SELECT * FROM {{ ref('dim_vehicle') }}
-)
-
-SELECT * from dim_date
+-- dim_vehicle AS (
+--     SELECT * FROM {{ ref('dim_vehicle') }}
+-- ),
 
 -- final AS (
 --     SELECT
@@ -60,3 +58,6 @@ SELECT * from dim_date
 -- )
 
 -- SELECT * FROM final
+
+
+    SELECT * FROM {{ ref('stg_motorvehicle_collisions_crashes') }}
